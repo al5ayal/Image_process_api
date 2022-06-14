@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>
+        <%= title %>
+    </title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet"
+        integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.1/css/all.min.css"
+        integrity="sha512-KfkfwYDsLkIlwQp6LFnl8zNdLGxu9YAA1QvwINks4PhcElQSvqcyVLLD9aMhXd13uQjoXtEKNosOWaZqXgel0g=="
+        crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link rel="stylesheet" href="public/css/main.css">
+    <link rel="icon" href="public/favicon.ico" type="image/x-icon" />
+</head>
+
+<body>
+    <div class="container">
+        <header class="text-white text-center my-5">
+            <h3 class="display-4">Upload Your Image</h3>
+            <i class="fa-solid fa-images m-2" style="font-size:5rem"></i>
+        </header>
+        <div class="row">
+            <div class="col-lg-8 mx-auto">
+                <form id="uploadForm">
+                    <div class="input-group mb-3 px-2 py-2 rounded-pill bg-white shadow-sm">
+                        <input id="upload" type="file" name="image" onchange="readURL(this);"
+                            class="form-control border-0">
+                        <div class="input-group-append px-3">
+                            <button type="button" class="btn btn-secondary rounded" onclick="uplaod()">upload</button>
+                        </div>
+                    </div>
+                </form>
+
+
+                <p class="font-italic text-white text-center">Image Preview</p>
+                <p id="updImage" class="font-italic text-white text-center" style="display: none">Uploaded Image Url:
+                    <span class="bg-light py-1 px-2"><a id="uploadedImageUrl" href="" target="_blank"></a> </span>
+                </p>
+                <div class="image-area mt-4"><img id="imagepreview" src="#" alt=""
+                        class="img-fluid rounded shadow-sm mx-auto d-block"></div>
+
+            </div>
+        </div>
+
+        <div class="row mt-4 justify-content-center">
+            <div class="col-8 text-center mx-auto">
+                <div id="apiError" class="alert alert-danger" style="display: none">
+
+                </div>
+            </div>
+        </div>
+        <div class="row mt-4 justify-content-center">
+            <div class="col-auto">
+                <label class="visually-hidden" for="autoSizingInputGroup">Width</label>
+                <div class="input-group">
+                    <div class="input-group-text">Width:</div>
+                    <input id="width" type="number" class="form-control" id="autoSizingInputGroup" placeholder="Width"
+                        value="300">
+                </div>
+            </div>
+            <div class="col-auto">
+                <label class="visually-hidden" for="autoSizingInputGroup">Height</label>
+                <div class="input-group">
+                    <div class="input-group-text">Height:</div>
+                    <input id="height" type="number" class="form-control" id="autoSizingInputGroup" placeholder="Height"
+                        value="300">
+                </div>
+            </div>
+            <input id="returnfilename" type="hidden" class="form-control" />
+            <div class="col-auto">
+                <div class="input-group">
+                    <input type="button" class="btn btn-secondary btn-block" value="Resize" id="autoSizingInputGroup"
+                        placeholder="Height" onclick="resize()">
+                </div>
+            </div>
+
+            <div class="col-8 mx-auto mt-3">
+                <!-- resized image area-->
+                <p class="font-italic text-white text-center">review resized image</p>
+                <p id="rsu" class="font-italic text-white text-center" style="display:none">Resized Image url:
+                    <span class="bg-light py-1 px-2"><a id="resizedImageUrl" href="" target="_blank"></a>
+                </p>
+                <div class="image-area mt-4"><img id="ResizedImage" src="#" alt=""
+                        class="img-fluid rounded shadow-sm mx-auto d-block"></div>
+            </div>
+
+        </div>
+    </div>
+    <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.3.1/js/bootstrap.bundle.min.js"></script>
+    <script type="text/javascript">
+        var input = document.getElementById('upload');
+        function readURL(input) {
+            if (input.files && input.files[0]) {
+                var reader = new FileReader();
+
+                reader.onload = function (e) {
+                    $('#imagepreview')
+                        .attr('src', e.target.result);
+                };
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+
+        $(function () {
+            $('#upload').on('change', function () {
+                readURL(input);
+            });
+        });
+
+        //upload image to server
+        async function uplaod() {
+            const uploadfield = document.getElementById('upload');
+            if (!uploadfield.value.length) return;
+            const form = document.getElementById('uploadForm');
+            const formData = new FormData(form);
+            const updImage = document.getElementById('updImage');
+            const uploadedImageUrl = document.getElementById('uploadedImageUrl');
+            const returnfilename = document.getElementById('returnfilename');
+            await fetch('/api/images/upload', {
+                method: 'POST',
+                //headers: { 'Content-Type': 'multipart/form-data' },
+                body: formData
+            }).then(data => data.json()).then(data => {
+                console.log(data);
+                updImage.style.display = 'block';
+                uploadedImageUrl.href = data.filePath;
+                uploadedImageUrl.innerText = data.filePath;
+                returnfilename.value = data.filename;
+            });
+        }
+
+
+        //upload image to server
+        async function resize() {
+            const width = document.getElementById('width');
+            const height = document.getElementById('height');
+            const filename = document.getElementById('returnfilename');
+            const resizedImageUrl = document.getElementById('resizedImageUrl');
+            const rsu = document.getElementById('rsu');
+            const ResizedImage = document.getElementById('ResizedImage');//.src
+            const url = `/api/images?filename=${filename.value}&width=${width.value}&height=${height.value}`;
+            await fetch(url).then(data => {
+                if (data.status === 200) {
+                    apiError.style.display = 'none';
+                    apiError.innerText = '';
+                    rsu.style.display = 'block';
+                    ResizedImage.src = 'http://localhost:3000' + url;
+                    resizedImageUrl.href = 'http://localhost:3000' + url;
+                    resizedImageUrl.innerText = 'http://localhost:3000' + url;
+                } else {
+                    //error message data.error
+                    const apiError = document.getElementById('apiError');
+                    //console.log(data.json());
+                    data.json().then(data => {
+                        console.log(data);
+                        apiError.style.display = 'block';
+                        apiError.innerText = data.error;
+                    });
+                }
+
+            });
+        }
+    </script>
+</body>
+
+</html>
